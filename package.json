@@ -1,0 +1,22 @@
+{
+  "name": "simplifyos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "cors": "^2.8.5",
+    "systeminformation": "^5.25.11",
+    "mime-types": "^2.1.35"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-swc": "^3.7.0",
+    "lucide-react": "^0.471.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^5.4.0"
+  }
+}
