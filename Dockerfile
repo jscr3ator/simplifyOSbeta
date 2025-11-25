@@ -1,32 +1,39 @@
-# Multi-stage build for simplifyOS
-
+# ---------- BUILDER STAGE ----------
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
+# Install deps first (better caching)
 COPY package.json vite.config.mjs ./
+RUN npm install
+
+# Copy source
 COPY client ./client
 COPY server.js ./server.js
-COPY public ./public
 
-RUN npm install
+# Build Vite app
 RUN npm run build
 
+
+# ---------- PRODUCTION STAGE ----------
 FROM node:20-alpine
 
 WORKDIR /app
 
-# --- FIX: Install Docker CLI so the app can run docker commands ---
+# If your app needs docker (your previous version used docker-cli)
 RUN apk add --no-cache docker-cli
-# ------------------------------------------------------------------
 
 COPY package.json ./
 RUN npm install --omit=dev
 
+# Copy built frontend + server
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./server.js
-COPY --from=builder /app/public ./public
+
+# ❌ Removed — public folder does not exist
+# COPY --from=builder /app/public ./public
 
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["node","server.js"]
+CMD ["node", "server.js"]
