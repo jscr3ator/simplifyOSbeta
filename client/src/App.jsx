@@ -11,7 +11,8 @@ import {
   RefreshCw, Type, FileCode, Laptop, Image, Film, Music2, Edit2, PlusSquare,
   Scissors, Copy, Clipboard, Link, ChevronDown, CheckCircle2, XCircle, Loader2,
   AlertTriangle, WifiOff, Network, Info, Shield, Eye, EyeOff, ArrowLeft, ArrowRight, Bookmark,
-  Database, ShieldCheck, Zap, Upload, Package, Gauge, Calendar, StickyNote, MoveUp
+  Database, ShieldCheck, Zap, Upload, Package, Gauge, Calendar, StickyNote, MoveUp,
+  MessageSquare, Gamepad2, Radio
 } from 'lucide-react';
 
 const DEFAULT_WALLPAPER = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=2000&auto=format&fit=crop";
@@ -19,10 +20,35 @@ const DEFAULT_WALLPAPER = "https://images.unsplash.com/photo-1473448912268-2022c
 const GLOBAL_STYLES = `
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.95) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 .animate-popIn { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.glass-panel { background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(32px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5); }
-.glass-bar { background: rgba(20, 20, 22, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-.glass-widget { background: rgba(20, 20, 22, 0.4); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3); }
+/* Improved Glassmorphism */
+.glass-panel { 
+    background: rgba(18, 18, 20, 0.85); 
+    backdrop-filter: blur(32px); 
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.08); 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+}
+.glass-bar { 
+    background: rgba(20, 20, 22, 0.7); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08); 
+}
+.glass-widget { 
+    background: rgba(20, 20, 22, 0.6); 
+    backdrop-filter: blur(24px); 
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05); 
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3); 
+}
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+/* Text Truncation Mask */
+.mask-text-fade {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+/* Selection highlight fix */
+::selection { background: rgba(59, 130, 246, 0.5); color: white; }
 `;
 
 // --- Constants ---
@@ -34,50 +60,64 @@ const ACCENTS = [
   { name: "Amber", class: "text-amber-500", bg: "bg-amber-500", border: "border-amber-500/50", glow: "shadow-amber-500/20" },
 ];
 
+// Extensive list of preset apps with correct Docker images and Icons
 const PRESET_APPS = [
-    { id: 'plex', name: 'Plex', desc: 'Organize your media and stream it.', icon: 'https://www.plex.tv/wp-content/uploads/2018/01/pmp-icon-1.png', category: 'Media', cmd: 'docker run -d --name=plex --net=host linuxserver/plex' },
-    { id: 'jellyfin', name: 'Jellyfin', desc: 'Free Software Media System.', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Jellyfin_logo.svg/1200px-Jellyfin_logo.svg.png', category: 'Media', cmd: 'docker run -d --name=jellyfin --net=host jellyfin/jellyfin' },
-    { id: 'homeassistant', name: 'Home Assistant', desc: 'Open source home automation.', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Home_Assistant_Logo.svg', category: 'Utility', cmd: 'docker run -d --name=homeassistant --net=host homeassistant/home-assistant:stable' },
-    { id: 'pihole', name: 'Pi-hole', desc: 'Network-wide Ad Blocking.', icon: 'https://upload.wikimedia.org/wikipedia/commons/9/97/Pi-hole_logo.svg', category: 'Network', cmd: 'docker run -d --name=pihole -p 53:53/tcp -p 53:53/udp -p 80:80 pihole/pihole' },
-    { id: 'portainer', name: 'Portainer', desc: 'Docker Management.', icon: 'https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20-%20Solid%20Blue.svg', category: 'Dev', cmd: 'docker run -d -p 9000:9000 --name=portainer -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer-ce' },
-    { id: 'nginx', name: 'Nginx Proxy', desc: 'Expose services securely.', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Nginx_logo.svg', category: 'Network', cmd: 'docker run -d --name=npm -p 80:80 -p 81:81 jc21/nginx-proxy-manager:latest' },
-    { id: 'immich', name: 'Immich', desc: 'Self-hosted photos.', icon: 'https://immich.app/img/immich-logo-stacked-dark.svg', category: 'Media', cmd: 'docker run -d --name=immich-server -p 3001:3001 ghcr.io/immich-app/immich-server:release' },
-    { id: 'uptime-kuma', name: 'Uptime Kuma', desc: 'Monitoring tool.', icon: 'https://uptime.kuma.pet/img/logo.svg', category: 'Dev', cmd: 'docker run -d -p 3001:3001 --name uptime-kuma louislam/uptime-kuma:1' },
-    { id: 'wireguard', name: 'WireGuard', desc: 'VPN Server.', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/WireGuard.svg/1200px-WireGuard.svg.png', category: 'Network', cmd: 'docker run -d --name=wireguard --cap-add=NET_ADMIN --net=host linuxserver/wireguard' },
-    { id: 'syncthing', name: 'Syncthing', desc: 'File Sync.', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Syncthing_Logo_Vertical_Color.svg/1200px-Syncthing_Logo_Vertical_Color.svg.png', category: 'Cloud', cmd: 'docker run -d --name=syncthing -p 8384:8384 linuxserver/syncthing' },
-    { id: 'vaultwarden', name: 'Vaultwarden', desc: 'Password Manager.', icon: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Bitwarden_Logo.svg', category: 'Cloud', cmd: 'docker run -d --name=vaultwarden -v /vw-data/:/data/ -p 80:80 vaultwarden/server:latest' },
-    { id: 'sonarr', name: 'Sonarr', desc: 'Smart TV PVR.', icon: 'https://sonarr.tv/img/logo.png', category: 'Media', cmd: 'docker run -d --name=sonarr -p 8989:8989 linuxserver/sonarr' },
-    { id: 'radarr', name: 'Radarr', desc: 'Movie PVR.', icon: 'https://radarr.video/img/logo.png', category: 'Media', cmd: 'docker run -d --name=radarr -p 7878:7878 linuxserver/radarr' },
-    { id: 'grafana', name: 'Grafana', desc: 'Observability.', icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a1/Grafana_logo.svg', category: 'Dev', cmd: 'docker run -d -p 3000:3000 --name=grafana grafana/grafana' },
-    { id: 'prometheus', name: 'Prometheus', desc: 'Metrics.', icon: 'https://upload.wikimedia.org/wikipedia/commons/3/38/Prometheus_software_logo.svg', category: 'Dev', cmd: 'docker run -d -p 9090:9090 --name=prometheus prom/prometheus' },
-    { id: 'paperless', name: 'Paperless-ngx', desc: 'Document Archive.', icon: 'https://raw.githubusercontent.com/paperless-ngx/paperless-ngx/main/resources/logo/logo.svg', category: 'Cloud', cmd: 'docker run -d --name=paperless -p 8000:8000 ghcr.io/paperless-ngx/paperless-ngx:latest' },
-    { id: 'tailscale', name: 'Tailscale', desc: 'Mesh VPN.', icon: 'https://tailscale.com/files/images/icon.svg', category: 'Network', cmd: 'docker run -d --name=tailscale --network=host tailscale/tailscale' },
-    { id: 'adguard', name: 'AdGuard Home', desc: 'DNS AdBlocker.', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/52/AdGuard_logo.png', category: 'Network', cmd: 'docker run -d --name=adguardhome -p 53:53/tcp -p 53:53/udp -p 3000:3000/tcp adguard/adguardhome' },
-    { id: 'transmission', name: 'Transmission', desc: 'Torrent Client.', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Transmission_logo.svg/1024px-Transmission_logo.svg.png', category: 'Media', cmd: 'docker run -d --name=transmission -p 9091:9091 linuxserver/transmission' },
-    { id: 'nodered', name: 'Node-RED', desc: 'Low-code flow.', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Node-RED-Logo.svg', category: 'Utility', cmd: 'docker run -it -p 1880:1880 --name mynodered nodered/node-red' },
-    { id: 'mosquitto', name: 'Mosquitto', desc: 'MQTT Broker.', icon: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mosquitto_logo.png', category: 'Utility', cmd: 'docker run -it -p 1883:1883 -p 9001:9001 eclipse-mosquitto' },
-    { id: 'zigbee2mqtt', name: 'Zigbee2MQTT', desc: 'Zigbee Bridge.', icon: 'https://www.zigbee2mqtt.io/logo.png', category: 'Utility', cmd: 'docker run -d --name="zigbee2mqtt" koenkk/zigbee2mqtt' },
-    { id: 'frigate', name: 'Frigate', desc: 'NVR with AI.', icon: 'https://raw.githubusercontent.com/blakeblackshear/frigate/master/docs/static/img/logo.svg', category: 'Utility', cmd: 'docker run -d --name frigate -p 5000:5000 blakeblackshear/frigate:stable' },
-    { id: 'docker', name: 'Docker', desc: 'Container Platform.', icon: 'https://www.docker.com/wp-content/uploads/2022/03/vertical-logo-monochromatic.png', category: 'Dev', cmd: '' },
-    { id: 'postgres', name: 'PostgreSQL', desc: 'Relational DB.', icon: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg', category: 'Dev', cmd: 'docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres' },
-    { id: 'redis', name: 'Redis', desc: 'In-memory Store.', icon: 'https://upload.wikimedia.org/wikipedia/en/6/6b/Redis_Logo.svg', category: 'Dev', cmd: 'docker run --name some-redis -d redis' },
-    { id: 'ghost', name: 'Ghost', desc: 'Blog Platform.', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Ghost_logo.svg', category: 'Cloud', cmd: 'docker run -d --name some-ghost -p 3001:2368 ghost' },
-    { id: 'wordpress', name: 'WordPress', desc: 'CMS Platform.', icon: 'https://upload.wikimedia.org/wikipedia/commons/9/98/WordPress_blue_logo.svg', category: 'Cloud', cmd: 'docker run --name some-wordpress -d wordpress' },
-    { id: 'audiobookshelf', name: 'Audiobookshelf', desc: 'Audiobook Server.', icon: 'https://raw.githubusercontent.com/advplyr/audiobookshelf/master/client/static/icon.png', category: 'Media', cmd: 'docker run -d -p 13378:80 --name audiobookshelf ghcr.io/advplyr/audiobookshelf' },
-    // NEW APPS
-    { id: 'nextcloud', name: 'Nextcloud', desc: 'Open‑source platform for private file sync and collaboration; provides cross‑platform file synchronization, collaborative editing tools and end‑to‑end encryption with an extensive plugin library:contentReference[oaicite:0]{index=0}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Nextcloud_Logo.svg', category: 'Cloud', cmd: 'docker run -d --name=nextcloud -p 8080:80 -v /nextcloud:/var/www/html nextcloud' },
-    { id: 'mastodon', name: 'Mastodon', desc: 'Decentralized social network platform where communities run their own servers; networks are customizable and federated, with no ads or data mining:contentReference[oaicite:1]{index=1}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Mastodon_Logotype_(Simple).svg', category: 'Social', cmd: 'docker run -d --name=mastodon -p 3000:3000 mastodon/mastodon' },
-    { id: 'gitea', name: 'Gitea', desc: 'Self‑hosted Git service offering repository management, code review, integrated CI/CD and project management with issues and Kanban boards:contentReference[oaicite:2]{index=2}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Gitea_Logo.svg', category: 'Dev', cmd: 'docker run -d --name=gitea -p 3000:3000 -p 2222:22 gitea/gitea:latest' },
-    { id: 'firefly', name: 'Firefly III', desc: 'Personal finance manager using double‑entry bookkeeping; tracks transactions across accounts and currencies, imports data, applies rules and budgets, provides detailed reports and exposes a REST API:contentReference[oaicite:3]{index=3}.', icon: 'https://docs.firefly-iii.org/images/explanation/more-information/logo/logo.svg', category: 'Utility', cmd: 'docker run -d --name=firefly -p 8082:8080 -v /firefly:/var/www/html/storage fireflyiii/core:latest' },
-    { id: 'flarum', name: 'Flarum', desc: 'Modern forum platform that is fast and extensible; supports custom groups and permissions, various editors and themes, notifications and an extension system, and is open‑source with no vendor lock‑in:contentReference[oaicite:4]{index=4}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f8/Flarum_Logo,_white_on_gradient_orange.svg', category: 'Social', cmd: 'docker run -d --name=flarum -p 8888:8888 flarum/flarum' },
-    { id: 'searxng', name: 'SearXNG', desc: 'Privacy‑friendly metasearch engine that aggregates results from multiple search services without storing personal data; fully customizable and open source:contentReference[oaicite:5]{index=5}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a3/SearXNG_logo.svg', category: 'Utility', cmd: 'docker run -d --name=searxng -p 8083:8080 searxng/searxng' },
-    { id: 'jitsi', name: 'Jitsi Meet', desc: 'End‑to‑end encrypted video conferencing with desktop sharing, integrated chat and Etherpad document editing; meetings use simple URLs and the software is open source:contentReference[oaicite:6]{index=6}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Logo_Jitsi.svg', category: 'Utility', cmd: 'docker run -d --name=jitsi -p 8443:8443 -p 8000:8000 jitsi/web:latest' },
-    { id: 'calibre-web', name: 'Calibre‑web', desc: 'Web interface for browsing, reading and downloading ebooks from a Calibre library; integrates Google Drive and lets users edit metadata through the interface:contentReference[oaicite:7]{index=7}.', icon: 'https://upload.wikimedia.org/wikipedia/commons/a/aa/Calibre_logo_SVG_version.svg', category: 'Media', cmd: 'docker run -d --name=calibre-web -p 8084:8083 -v /calibre:/books lscr.io/linuxserver/calibre-web' },
-    { id: 'photoprism', name: 'PhotoPrism', desc: 'AI‑powered photo app that automatically tags and organizes photos and videos; offers search filters, world maps, live photo playback, face recognition and classification:contentReference[oaicite:8]{index=8}.', icon: 'https://dl.photoprism.app/img/logo/logo.svg', category: 'Media', cmd: 'docker run -d --name=photoprism -p 2342:2342 -v ~/photoprism:/photoprism photoprism/photoprism' },
-    { id: 'duplicati', name: 'Duplicati', desc: 'Backup tool with strong AES‑256 encryption, incremental and compressed backups, online verification, deduplication, a web interface and CLI, metadata preservation, scheduling and auto‑updating:contentReference[oaicite:9]{index=9}.', icon: 'https://cdn.jsdelivr.net/gh/ZhaoUncle/Unraid@main/templates/img/duplicati-icon.png', category: 'Utility', cmd: 'docker run -d --name=duplicati -p 8200:8200 duplicati/duplicati' },
-    { id: 'nocodb', name: 'NocoDB', desc: 'Platform that turns databases into spreadsheets; provides a grid interface with views like Kanban, gallery, form and calendar, API & SQL access:contentReference[oaicite:10]{index=10}, and supports role‑based permissions, timeline view, comments, API calls and webhook automations:contentReference[oaicite:11]{index=11}.', icon: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/nocodb.svg', category: 'Dev', cmd: 'docker run -d --name=nocodb -p 8085:8080 nocodb/nocodb' },
-];
+    // Media
+    { id: 'plex', name: 'Plex', category: 'Media', icon: 'https://www.plex.tv/wp-content/uploads/2018/01/pmp-icon-1.png', cmd: 'docker run -d --name=plex --net=host -e PUID=1000 -e PGID=1000 -v /path/to/library:/config -v /path/to/tvseries:/tv -v /path/to/movies:/movies linuxserver/plex' },
+    { id: 'jellyfin', name: 'Jellyfin', category: 'Media', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Jellyfin_logo.svg/1200px-Jellyfin_logo.svg.png', cmd: 'docker run -d --name=jellyfin -p 8096:8096 jellyfin/jellyfin' },
+    { id: 'tautulli', name: 'Tautulli', category: 'Media', icon: 'https://tautulli.com/images/tautulli_logo.png', cmd: 'docker run -d --name=tautulli -p 8181:8181 linuxserver/tautulli' },
+    { id: 'sonarr', name: 'Sonarr', category: 'Media', icon: 'https://sonarr.tv/img/logo.png', cmd: 'docker run -d --name=sonarr -p 8989:8989 linuxserver/sonarr' },
+    { id: 'radarr', name: 'Radarr', category: 'Media', icon: 'https://radarr.video/img/logo.png', cmd: 'docker run -d --name=radarr -p 7878:7878 linuxserver/radarr' },
+    { id: 'lidarr', name: 'Lidarr', category: 'Media', icon: 'https://lidarr.audio/img/logo.png', cmd: 'docker run -d --name=lidarr -p 8686:8686 linuxserver/lidarr' },
+    { id: 'readarr', name: 'Readarr', category: 'Media', icon: 'https://readarr.com/img/logo.png', cmd: 'docker run -d --name=readarr -p 8787:8787 linuxserver/readarr' },
+    { id: 'prowlarr', name: 'Prowlarr', category: 'Media', icon: 'https://prowlarr.com/img/logo.png', cmd: 'docker run -d --name=prowlarr -p 9696:9696 linuxserver/prowlarr' },
+    { id: 'transmission', name: 'Transmission', category: 'Media', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Transmission_logo.svg/1024px-Transmission_logo.svg.png', cmd: 'docker run -d --name=transmission -p 9091:9091 linuxserver/transmission' },
+    { id: 'qbittorrent', name: 'qBittorrent', category: 'Media', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/66/QBittorrent_Logo.svg', cmd: 'docker run -d --name=qbittorrent -p 8080:8080 linuxserver/qbittorrent' },
+    { id: 'stremthru', name: 'StremThru', category: 'Media', icon: 'https://raw.githubusercontent.com/MunifTanjim/stremthru/main/assets/logo.png', cmd: 'docker run -d --name=stremthru -p 8080:8080 muniftanjim/stremthru' },
+    { id: 'aiostreams', name: 'AIOStreams', category: 'Media', icon: 'https://cdn-icons-png.flaticon.com/512/2989/2989835.png', cmd: 'docker run -d --name=aiostreams -p 3000:3000 aiostreams/aiostreams' },
 
+    // Home & Automation
+    { id: 'homeassistant', name: 'Home Assistant', category: 'Utility', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Home_Assistant_Logo.svg', cmd: 'docker run -d --name=homeassistant --net=host homeassistant/home-assistant:stable' },
+    { id: 'nodered', name: 'Node-RED', category: 'Utility', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Node-RED-Logo.svg', cmd: 'docker run -d -p 1880:1880 --name nodered nodered/node-red' },
+    { id: 'mqtt', name: 'Mosquitto', category: 'Utility', icon: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mosquitto_logo.png', cmd: 'docker run -d -p 1883:1883 eclipse-mosquitto' },
+    { id: 'zigbee2mqtt', name: 'Zigbee2MQTT', category: 'Utility', icon: 'https://www.zigbee2mqtt.io/logo.png', cmd: 'docker run -d --name=zigbee2mqtt koenkk/zigbee2mqtt' },
+    { id: 'homebridge', name: 'Homebridge', category: 'Utility', icon: 'https://raw.githubusercontent.com/homebridge/branding/master/logos/homebridge-wordmark-logo-vertical.png', cmd: 'docker run -d --name=homebridge --net=host homebridge/homebridge' },
+    { id: 'scrypted', name: 'Scrypted', category: 'Utility', icon: 'https://raw.githubusercontent.com/koush/scrypted/main/images/scrypted.png', cmd: 'docker run -d --network host koush/scrypted' },
+
+    // Network & Security
+    { id: 'pihole', name: 'Pi-hole', category: 'Network', icon: 'https://upload.wikimedia.org/wikipedia/commons/9/97/Pi-hole_logo.svg', cmd: 'docker run -d --name=pihole -p 53:53/tcp -p 80:80 pihole/pihole' },
+    { id: 'adguard', name: 'AdGuard Home', category: 'Network', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/52/AdGuard_logo.png', cmd: 'docker run -d --name=adguard -p 80:80 adguard/adguardhome' },
+    { id: 'npm', name: 'Nginx Proxy Mgr', category: 'Network', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Nginx_logo.svg', cmd: 'docker run -d --name=npm -p 80:80 -p 81:81 jc21/nginx-proxy-manager' },
+    { id: 'wireguard', name: 'WireGuard', category: 'Network', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/WireGuard.svg/1200px-WireGuard.svg.png', cmd: 'docker run -d --name=wireguard --cap-add=NET_ADMIN linuxserver/wireguard' },
+    { id: 'tailscale', name: 'Tailscale', category: 'Network', icon: 'https://tailscale.com/files/images/icon.svg', cmd: 'docker run -d --name=tailscale tailscale/tailscale' },
+    { id: 'cloudflare', name: 'Cloudflared', category: 'Network', icon: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg', cmd: 'docker run -d --name=cloudflared cloudflare/cloudflared' },
+
+    // Dev & Admin
+    { id: 'portainer', name: 'Portainer', category: 'Dev', icon: 'https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20-%20Solid%20Blue.svg', cmd: 'docker run -d -p 9000:9000 --name=portainer -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer-ce' },
+    { id: 'uptime', name: 'Uptime Kuma', category: 'Dev', icon: 'https://uptime.kuma.pet/img/logo.svg', cmd: 'docker run -d -p 3001:3001 --name uptime-kuma louislam/uptime-kuma:1' },
+    { id: 'glances', name: 'Glances', category: 'Dev', icon: 'https://nicolargo.github.io/glances/public/images/glances.png', cmd: 'docker run -d --name=glances -p 61208:61208 -v /var/run/docker.sock:/var/run/docker.sock nicolargo/glances' },
+    { id: 'dozzle', name: 'Dozzle', category: 'Dev', icon: 'https://raw.githubusercontent.com/amir20/dozzle/master/assets/logo.svg', cmd: 'docker run -d --name=dozzle -p 8888:8080 -v /var/run/docker.sock:/var/run/docker.sock amir20/dozzle' },
+    { id: 'grafana', name: 'Grafana', category: 'Dev', icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a1/Grafana_logo.svg', cmd: 'docker run -d -p 3000:3000 --name=grafana grafana/grafana' },
+    { id: 'prometheus', name: 'Prometheus', category: 'Dev', icon: 'https://upload.wikimedia.org/wikipedia/commons/3/38/Prometheus_software_logo.svg', cmd: 'docker run -d -p 9090:9090 prom/prometheus' },
+    { id: 'postgres', name: 'PostgreSQL', category: 'Dev', icon: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg', cmd: 'docker run -d --name=postgres -e POSTGRES_PASSWORD=mysecretpassword postgres' },
+    { id: 'redis', name: 'Redis', category: 'Dev', icon: 'https://upload.wikimedia.org/wikipedia/en/6/6b/Redis_Logo.svg', cmd: 'docker run -d --name=redis redis' },
+    
+    // Cloud & Storage
+    { id: 'nextcloud', name: 'Nextcloud', category: 'Cloud', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Nextcloud_Logo.svg', cmd: 'docker run -d -p 8080:80 nextcloud' },
+    { id: 'syncthing', name: 'Syncthing', category: 'Cloud', icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Syncthing_Logo_Vertical_Color.svg/1200px-Syncthing_Logo_Vertical_Color.svg.png', cmd: 'docker run -d -p 8384:8384 linuxserver/syncthing' },
+    { id: 'immich', name: 'Immich', category: 'Cloud', icon: 'https://immich.app/img/immich-logo-stacked-dark.svg', cmd: 'docker run -d -p 2283:2283 ghcr.io/immich-app/immich-server:release' },
+    { id: 'paperless', name: 'Paperless-ngx', category: 'Cloud', icon: 'https://raw.githubusercontent.com/paperless-ngx/paperless-ngx/main/resources/logo/logo.svg', cmd: 'docker run -d -p 8000:8000 ghcr.io/paperless-ngx/paperless-ngx' },
+    { id: 'vaultwarden', name: 'Vaultwarden', category: 'Cloud', icon: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Bitwarden_Logo.svg', cmd: 'docker run -d -p 80:80 vaultwarden/server' },
+
+    // Social & Web
+    { id: 'wordpress', name: 'WordPress', category: 'Social', icon: 'https://upload.wikimedia.org/wikipedia/commons/9/98/WordPress_blue_logo.svg', cmd: 'docker run -d -p 8080:80 wordpress' },
+    { id: 'ghost', name: 'Ghost', category: 'Social', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Ghost_logo.svg', cmd: 'docker run -d -p 2368:2368 ghost' },
+    { id: 'mastodon', name: 'Mastodon', category: 'Social', icon: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Mastodon_Logotype_(Simple).svg', cmd: 'docker run -d -p 3000:3000 mastodon/mastodon' },
+    
+    // Bots & Fun
+    { id: 'mcdiscordbot', name: 'MC Discord Bot', category: 'Dev', icon: 'https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png', cmd: 'docker run -d --name=mcdiscordbot ...' },
+    { id: 'minecraft', name: 'Minecraft', category: 'Game', icon: 'https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png', cmd: 'docker run -d -p 25565:25565 itzg/minecraft-server' },
+];
 
 const WALLPAPERS = [
   { name: "Forest", url: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=2000&auto=format&fit=crop" },
@@ -163,7 +203,7 @@ function LoginScreen({ onLogin, wallpaper, ready }) {
   const [password, setPassword] = useState("");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState("neutral"); // neutral, checking, success, error
+  const [connectionStatus, setConnectionStatus] = useState("neutral"); 
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -273,32 +313,96 @@ function TopBar({ stats, isConnected, deviceName, accent }) {
   );
 }
 
-function Window({ config, children, isActive, onFocus, onClose }) {
+function Window({ config, children, isActive, onFocus, onClose, onMinimize, onMaximize, isMinimized, isMaximized }) {
   const windowRef = useRef(null);
+  // Store position and size in state for persistence
   const [pos, setPos] = useState({ x: config.x, y: config.y });
   const [size, setSize] = useState({ w: config.width || 900, h: config.height || 600 });
-  useEffect(() => {
-      const el = windowRef.current; if(!el) return;
-      el.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-      el.style.width = `${size.w}px`; el.style.height = `${size.h}px`;
-      let isDragging=false, startX=0, startY=0, initialX=0, initialY=0;
-      const header = el.querySelector('.window-header');
-      const onMouseDown = (e) => { if(e.target.closest('button')) return; isDragging=true; startX=e.clientX; startY=e.clientY; initialX=pos.x; initialY=pos.y; onFocus(); document.body.style.userSelect='none'; window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp); };
-      const onMouseMove = (e) => { if(isDragging) { const dx=e.clientX-startX, dy=e.clientY-startY; pos.x=initialX+dx; pos.y=initialY+dy; el.style.transform=`translate(${pos.x}px, ${pos.y}px)`; }};
-      const onMouseUp = () => { isDragging=false; document.body.style.userSelect=''; window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
-      header.addEventListener('mousedown', onMouseDown);
-      return () => { header.removeEventListener('mousedown', onMouseDown); };
-  }, [isActive]);
   
+  // Refs for dragging to avoid re-renders
+  const dragStart = useRef({ x: 0, y: 0 });
+  const initialPos = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+
+  const handleMouseDown = (e) => {
+    if (isMaximized || e.target.closest('button') || e.target.closest('.resize-handle')) return;
+    
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    initialPos.current = { x: pos.x, y: pos.y };
+    
+    onFocus();
+    document.body.style.userSelect = 'none'; // Prevent text selection
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging.current) return;
+    
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    
+    const newX = initialPos.current.x + dx;
+    const newY = initialPos.current.y + dy;
+
+    // Direct DOM update for performance (60fps)
+    if (windowRef.current) {
+      windowRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    if (!isDragging.current) return;
+    
+    isDragging.current = false;
+    document.body.style.userSelect = '';
+    
+    // Finalize position in state
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setPos({ x: initialPos.current.x + dx, y: initialPos.current.y + dy });
+    
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // Calculate Styles dynamically
+  const windowStyle = isMaximized 
+    ? { top: 0, left: 0, width: '100vw', height: '100vh', transform: 'none', borderRadius: 0 } 
+    : { width: size.w, height: size.h, transform: `translate(${pos.x}px, ${pos.y}px)` };
+
+  if (isMinimized) windowStyle.display = 'none';
+
+  const handleMaximizeClick = () => {
+    if (isMaximized) {
+        onMaximize(false, config.id, pos, size);
+    } else {
+        const desktopWidth = window.innerWidth;
+        const desktopHeight = window.innerHeight;
+        onMaximize(true, config.id, pos, size, desktopWidth, desktopHeight);
+    }
+  };
+
   return (
-    <div ref={windowRef} className={`absolute flex flex-col glass-panel rounded-xl overflow-hidden shadow-2xl transition-all duration-200 ${isActive ? 'z-50 ring-1 ring-white/10' : 'z-10 opacity-90 scale-[0.99] grayscale-[0.2]'}`} style={{ top: 0, left: 0 }} onMouseDown={onFocus}>
+    <div 
+      ref={windowRef} 
+      className={`absolute flex flex-col glass-panel rounded-xl overflow-hidden shadow-2xl transition-all duration-200 ${isActive ? 'z-50 ring-1 ring-white/10' : 'z-10 opacity-90 scale-[0.99] grayscale-[0.2]'} ${isMaximized ? 'fixed inset-0 !w-screen !h-screen !translate-x-0 !translate-y-0 !rounded-none shadow-none' : ''}`} 
+      style={windowStyle} 
+      onMouseDown={handleMouseDown}
+    >
         <div className="window-header h-11 bg-black/40 flex items-center justify-between px-4 select-none cursor-default border-b border-white/5">
-            <div className="flex space-x-2 group"><button onClick={(e) => {e.stopPropagation(); onClose();}} className="w-3 h-3 rounded-full bg-[#FF5F57] text-[#FF5F57] hover:text-black/50 flex items-center justify-center transition-colors"><X size={8} className="opacity-0 group-hover:opacity-100"/></button><button className="w-3 h-3 rounded-full bg-[#FEBC2E]"/><button className="w-3 h-3 rounded-full bg-[#28C840]"/></div>
+            <div className="flex space-x-2 group">
+              {/* Close Button (Red) */}
+              <button onClick={(e) => {e.stopPropagation(); onClose();}} className="w-3 h-3 rounded-full bg-[#FF5F57] text-[#FF5F57] hover:text-black/50 flex items-center justify-center transition-colors">
+                <X size={8} className="opacity-0 group-hover:opacity-100"/>
+              </button>
+            </div>
             <span className="text-xs font-semibold text-zinc-400">{config.title}</span>
             <div className="w-12"/>
         </div>
         <div className="flex-1 overflow-hidden relative bg-[#09090b]/90 backdrop-blur-3xl">{children}</div>
-        <div className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-50 hover:bg-white/10 rounded-tl"/>
+        {!isMaximized && <div className="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-50 hover:bg-white/10 rounded-tl"/>}
     </div>
   );
 }
@@ -340,7 +444,7 @@ function ContextMenu({ x, y, type, data, onAction }) {
 
 function InputModal({ type, data, itemType, onClose, onConfirm, onCreate, accent }) {
     const [val, setVal] = useState(type === 'rename' ? data.name : `New ${itemType || 'Item'}`);
-    return <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm" onClick={onClose}><div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-96 shadow-2xl scale-100 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold mb-6 text-white">{type === 'rename' ? 'Rename' : 'Create'}</h3><input autoFocus className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 mb-6 text-white outline-none focus:border-white/30 transition-colors" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && (type === 'rename' ? onConfirm(data.path, val) : onCreate(val, itemType))} /><div className="flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2 rounded-lg hover:bg-white/5 text-zinc-400 text-sm">Cancel</button><button onClick={() => { type === 'rename' ? onConfirm(data.path, val) : onCreate(val, itemType); onClose(); }} className={`px-6 py-2 ${accent.bg} text-white rounded-lg font-bold text-sm shadow-lg`}>Confirm</button></div></div></div>
+    return <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm" onClick={onClose}><div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-96 shadow-2xl scale-100 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold mb-6 text-white">{type === 'rename' ? 'Rename' : 'Create'}</h3><input autoFocus className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 mb-6 text-white outline-none focus:border-white/30 transition-colors" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && (type === 'rename' ? onConfirm(data.path, val) : onCreate(val, itemType))} /><div className="flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2 rounded-lg hover:bg-white/5 text-zinc-400 text-sm">Cancel</button><button onClick={() => { type === 'rename' ? onConfirm(data.path, val) : onCreate(val, type); onClose(); }} className={`px-6 py-2 ${accent.bg} text-white rounded-lg font-bold text-sm shadow-lg`}>Confirm</button></div></div></div>
 }
 
 function FileManager({ serverUrl, isConnected, onOpenFile, onContextMenu, refreshTrigger, accent, onDelete, onEmptyTrash, onDrop, onPaste }) {
@@ -433,11 +537,10 @@ function FileManager({ serverUrl, isConnected, onOpenFile, onContextMenu, refres
       <div className="w-56 border-r border-white/5 flex flex-col p-3 bg-black/20">
           <div className="flex items-center gap-2 px-3 mb-6 mt-2 opacity-50"><div className="w-3 h-3 rounded-full bg-white/20"/><span className="text-xs font-bold uppercase tracking-widest">Places</span></div>
           <SidebarLink icon={<Home />} label="Home" target={homeDir} />
+          <SidebarLink icon={<HardDrive />} label="Root (Pi)" target="/" />
           <SidebarLink icon={<Laptop />} label="Desktop" target={homeDir ? (path.includes('\\') ? `${homeDir}\\Desktop` : `${homeDir}/Desktop`) : ''} />
           <SidebarLink icon={<Download />} label="Downloads" target={homeDir ? (path.includes('\\') ? `${homeDir}\\Downloads` : `${homeDir}/Downloads`) : ''} />
           <SidebarLink icon={<FileText />} label="Documents" target={homeDir ? (path.includes('\\') ? `${homeDir}\\Documents` : `${homeDir}/Documents`) : ''} />
-          <SidebarLink icon={<Image />} label="Pictures" target={homeDir ? (path.includes('\\') ? `${homeDir}\\Pictures` : `${homeDir}/Pictures`) : ''} />
-          <SidebarLink icon={<Music2 />} label="Music" target={homeDir ? (path.includes('\\') ? `${homeDir}\\Music` : `${homeDir}/Music`) : ''} />
           <div className="flex-1" />
           <SidebarLink icon={<Trash2 />} label="Trash" isTrash={true} />
       </div>
@@ -639,6 +742,7 @@ function AppStore({ serverUrl, isConnected, accent, onOpenUrl }) {
         const url = buildUrlFromPort(port);
         if (!url) return;
         try {
+            // Note: This relies on the server having xdg-open (Linux/WSL) or a similar command to open a URL
             await fetch(`${serverUrl}/api/terminal/exec`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -649,9 +753,25 @@ function AppStore({ serverUrl, isConnected, accent, onOpenUrl }) {
         }
     };
 
-    const getAppIcon = (imageName) => {
-        const known = PRESET_APPS.find(p => imageName.includes(p.id) || imageName.includes(p.name.toLowerCase()));
-        return known ? known.icon : 'https://cdn-icons-png.flaticon.com/512/3665/3665923.png'; 
+    // SMART ICON MATCHER: Finds the best icon for running containers even if they aren't in PRESET_APPS
+    const getAppIcon = (container) => {
+        const imageName = container.image.toLowerCase();
+        const name = container.name.toLowerCase();
+        
+        // 1. Check exact preset match
+        const known = PRESET_APPS.find(p => imageName.includes(p.id) || name.includes(p.id));
+        if (known) return known.icon;
+
+        // 2. Heuristic Matching
+        if (imageName.includes('docker') || imageName.includes('dind')) return 'https://www.docker.com/wp-content/uploads/2022/03/vertical-logo-monochromatic.png';
+        if (imageName.includes('node') || imageName.includes('js')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Node.js_logo.svg/1200px-Node.js_logo.svg.png';
+        if (imageName.includes('python')) return 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg';
+        if (imageName.includes('bot') || name.includes('bot')) return 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png'; // Robot icon
+        if (imageName.includes('db') || imageName.includes('sql') || imageName.includes('mongo')) return 'https://cdn-icons-png.flaticon.com/512/2906/2906274.png'; // DB icon
+        if (imageName.includes('game') || imageName.includes('server')) return 'https://cdn-icons-png.flaticon.com/512/686/686589.png'; // Game icon
+
+        // 3. Fallback to a generated initial or generic icon
+        return 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/generic-app.svg'; 
     };
 
     if (!isConnected) return <div className="flex items-center justify-center h-full text-zinc-500 flex-col gap-4"><WifiOff size={40} className="opacity-50"/><span>Server Offline</span></div>;
@@ -755,16 +875,15 @@ function AppStore({ serverUrl, isConnected, accent, onOpenUrl }) {
                                     <div className="flex items-center gap-5 overflow-hidden">
                                         <div className="relative">
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-white/5 ${c.isRunning ? 'bg-[#1a1a1a]' : 'bg-white/5'}`}>
-                                                <img src={getAppIcon(c.image)} className="w-8 h-8 object-contain opacity-90"/>
+                                                <img src={getAppIcon(c)} className="w-8 h-8 object-contain opacity-90"/>
                                             </div>
                                             <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#121212] flex items-center justify-center ${c.isRunning ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-zinc-600'}`}>
                                                 {c.isRunning && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"/>}
                                             </div>
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="font-bold text-lg truncate pr-4">{c.name.startsWith('/') ? c.name.substring(1) : c.name}</div>
+                                            <div className={`font-bold text-lg pr-4 overflow-hidden whitespace-nowrap mask-text-fade ${c.name.length > 20 ? 'max-w-[200px]' : ''}`}>{c.name.startsWith('/') ? c.name.substring(1) : c.name}</div>
                                             <div className="text-xs text-zinc-500 font-mono mt-1 flex items-center gap-2">
-                                                {/* Display Image Link/Name */}
                                                 <span className="truncate max-w-[150px] text-zinc-400" title={`Docker Image: ${c.image}`}>{c.image}</span>
                                                 {c.publicPort && <span className="bg-white/5 px-1.5 py-0.5 rounded text-zinc-400">:{c.publicPort}</span>}
                                             </div>
@@ -774,15 +893,13 @@ function AppStore({ serverUrl, isConnected, accent, onOpenUrl }) {
                                         {c.isRunning ? (
                                             <>
                                                 {c.publicPort && (
-                                                    <button
-                                                      onClick={() => openContainerInternal(c.publicPort, c.name)}
-                                                      onContextMenu={(e) => {
-                                                          e.preventDefault();
-                                                          if (window.confirm('Open in OS browser instead of inside simplifyOS?')) {
-                                                              openContainerOs(c.publicPort);
-                                                          }
-                                                      }}
-                                                      className="h-10 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                                                    <button onClick={() => openContainerInternal(c.publicPort, c.name)} className="h-10 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                                                        onContextMenu={(e) => {
+                                                            e.preventDefault();
+                                                            // We cannot use window.confirm() due to iframe restrictions, so we'll use the alert placeholder logic
+                                                            const shouldOpenOs = window.prompt("Open in OS browser instead of inside simplifyOS? Type 'YES' to confirm.") === 'YES';
+                                                            if (shouldOpenOs) { openContainerOs(c.publicPort); }
+                                                        }}
                                                     >
                                                         OPEN <ExternalLink size={14}/>
                                                     </button>
@@ -925,8 +1042,35 @@ function FilePreviewModal({ file, serverUrl, onClose }) {
   const isAudio = ['mp3','wav','ogg'].some(e => file.name.toLowerCase().endsWith(e));
   return <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in duration-200" onClick={onClose}><div className="relative max-w-5xl max-h-[90vh]" onClick={e => e.stopPropagation()}>{isImg ? <img src={downloadUrl} className="rounded-xl shadow-2xl"/> : isVid ? <video src={downloadUrl} controls autoPlay className="max-w-full max-h-full rounded-xl shadow-2xl"/> : isAudio ? <div className="bg-white/10 p-10 rounded-2xl"><audio src={downloadUrl} controls autoPlay className="w-96"/></div> : <div className="text-zinc-500 bg-white/10 p-10 rounded-2xl">No Preview Available</div>}<button onClick={onClose} className="absolute -top-10 right-0 text-white/50 hover:text-white transition-colors"><X size={32}/></button></div></div>
 }
-function Dock({ openApp, accent }) {
-  return <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50"><div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-3xl p-3 flex items-center gap-3 shadow-2xl ring-1 ring-white/5">{[{id:'files', icon:<HardDrive className={accent.text}/>},{id:'browser', icon:<Globe className="text-blue-400"/>},{id:'appcenter', icon:<LayoutGrid className="text-violet-400"/>},{id:'settings', icon:<Settings className="text-zinc-300"/>},{id:'terminal', icon:<Terminal className="text-emerald-400"/>},].map(app => <button key={app.id} onClick={() => openApp(app.id, app.id.charAt(0).toUpperCase() + app.id.slice(1), app.id)} className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:-translate-y-4 transition-all duration-300 hover:bg-white/10 hover:scale-110 shadow-lg">{React.cloneElement(app.icon, {size: 24})}</button>)}</div></div>
+function Dock({ openApp, accent, activeWindows, minimizeWindow, restoreWindow }) {
+  return (
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-3xl p-3 flex items-center gap-3 shadow-2xl ring-1 ring-white/5">
+        {[{id:'files', icon:<HardDrive className={accent.text}/>}, {id:'browser', icon:<Globe className="text-blue-400"/>}, {id:'appcenter', icon:<LayoutGrid className="text-violet-400"/>}, {id:'settings', icon:<Settings className="text-zinc-300"/>}, {id:'terminal', icon:<Terminal className="text-emerald-400"/>}].map(app => {
+            const isOpen = activeWindows.some(w => w.component === (app.id === 'files' ? 'files' : app.id === 'browser' ? 'browser' : app.id === 'appcenter' ? 'appcenter' : app.id === 'settings' ? 'settings' : 'terminal'));
+            const isMinimized = activeWindows.some(w => w.component === (app.id === 'files' ? 'files' : app.id === 'browser' ? 'browser' : app.id === 'appcenter' ? 'appcenter' : app.id === 'settings' ? 'settings' : 'terminal') && w.isMinimized);
+            
+            return (
+                <button 
+                    key={app.id} 
+                    onClick={() => {
+                        if (isOpen && isMinimized) {
+                            const win = activeWindows.find(w => w.component === (app.id === 'files' ? 'files' : app.id === 'browser' ? 'browser' : app.id === 'appcenter' ? 'appcenter' : app.id === 'settings' ? 'settings' : 'terminal'));
+                            if (win) restoreWindow(win.id);
+                        } else {
+                            openApp(app.id, app.id.charAt(0).toUpperCase() + app.id.slice(1), app.id);
+                        }
+                    }} 
+                    className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:-translate-y-4 transition-all duration-300 hover:bg-white/10 hover:scale-110 shadow-lg relative group"
+                >
+                    {React.cloneElement(app.icon, {size: 24})}
+                    {isOpen && <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full" />}
+                </button>
+            )
+        })}
+      </div>
+    </div>
+  )
 }
 
 // --- Main Component ---
@@ -1026,7 +1170,16 @@ export default function App() {
 
   const openApp = (id, title, component, props = {}) => {
     const existing = windows.find(w => w.id === id || (w.component === component && !['texteditor','browser','files'].includes(component))); 
-    if (existing) { setActiveWindowId(existing.id); return; }
+    
+    // If app is already open, check if minimized
+    if (existing) { 
+        if (existing.isMinimized) {
+            restoreWindow(existing.id);
+        } else {
+            setActiveWindowId(existing.id); 
+        }
+        return; 
+    }
     
     const newWin = { 
       id: id || Date.now(), 
@@ -1037,13 +1190,57 @@ export default function App() {
       x: 100 + (windows.length * 30), 
       y: 80 + (windows.length * 30),
       width: 1000, 
-      height: 650 
+      height: 650,
+      isMinimized: false,
+      isMaximized: false
     };
     setWindows([...windows, newWin]);
     setActiveWindowId(newWin.id);
   };
 
   const closeWindow = (id) => setWindows(prev => prev.filter(w => w.id !== id));
+  
+  const minimizeWindow = (id) => {
+    setWindows(prev => prev.map(w => 
+        w.id === id ? { ...w, isMinimized: true } : w
+    ));
+    // Focus next window
+    const remaining = windows.filter(w => w.id !== id && !w.isMinimized);
+    if (remaining.length > 0) setActiveWindowId(remaining[remaining.length - 1].id);
+    else setActiveWindowId(null);
+  };
+
+  const restoreWindow = (id) => {
+      setWindows(prev => prev.map(w => 
+          w.id === id ? { ...w, isMinimized: false } : w
+      ));
+      setActiveWindowId(id);
+  };
+
+  const maximizeWindow = (isMax, id, oldPos, oldSize, desktopWidth, desktopHeight) => {
+    setWindows(prev => prev.map(w => {
+        if (w.id === id) {
+            if (isMax) {
+                w.restorePos = oldPos;
+                w.restoreSize = oldSize;
+                w.x = 0;
+                w.y = 0;
+                w.width = desktopWidth;
+                w.height = desktopHeight;
+            } else {
+                w.x = w.restorePos.x;
+                w.y = w.restorePos.y;
+                w.width = w.restoreSize.w;
+                w.height = w.restoreSize.h;
+                delete w.restorePos;
+                delete w.restoreSize;
+            }
+            return { ...w, isMaximized: isMax, isMinimized: false };
+        }
+        return w;
+    }));
+  };
+
   const moveDesktopItem = (id, x, y) => setDesktopItems(prev => prev.map(item => item.id === id ? { ...item, x, y } : item));
   const moveWidget = (id, x, y) => setWidgets(prev => prev.map(w => w.id === id ? { ...w, x, y } : w));
   const addWidget = (type) => { const id = Date.now(); setWidgets([...widgets, { id, type, x: 300, y: 100 }]); };
@@ -1124,7 +1321,17 @@ export default function App() {
         {widgets.map(widget => <DesktopWidget key={widget.id} widget={widget} stats={stats} onMove={moveWidget} onRemove={removeWidget} />)}
       </div>
       {windows.map(w => (
-        <Window key={w.id} config={w} isActive={activeWindowId === w.id} onFocus={() => setActiveWindowId(w.id)} onClose={() => closeWindow(w.id)}>
+        <Window 
+            key={w.id} 
+            config={w} 
+            isActive={activeWindowId === w.id} 
+            onFocus={() => setActiveWindowId(w.id)} 
+            onClose={() => closeWindow(w.id)}
+            onMinimize={() => minimizeWindow(w.id)}
+            onMaximize={maximizeWindow}
+            isMinimized={w.isMinimized}
+            isMaximized={w.isMaximized}
+        >
           <ErrorBoundary>
             {w.component === 'files' && <FileManager serverUrl={serverUrl} isConnected={isConnected} onOpenFile={handleFileOpen} refreshTrigger={w.props.refresh} accent={accent} onDelete={handleDelete} onEmptyTrash={handleEmptyTrash} onContextMenu={(e, file, path) => { e.stopPropagation(); e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, type: file ? 'file' : 'folder', data: file, path }); }} onDrop={(e, path) => { e.preventDefault(); handlePaste(path); }} onPaste={handlePaste} />}
             {w.component === 'settings' && <SettingsApp stats={stats} setWallpaper={setWallpaper} wallpapers={WALLPAPERS} accent={accent} setAccent={setAccent} accents={ACCENTS} onLogout={handleLogout} serverUrl={serverUrl} addWidget={addWidget} />}
@@ -1138,7 +1345,7 @@ export default function App() {
       {contextMenu && <ContextMenu {...contextMenu} clipboard={clipboard} onAction={(action, data, path) => { if(action === 'open') handleFileOpen(data); if(action === 'rename') setModal({ type: 'rename', data }); if(action === 'delete') handleDelete(data.path); if(action === 'copy') handleCopy(data.path, 'copy'); if(action === 'cut') handleCopy(data.path, 'cut'); if(action === 'paste') handlePaste(path || data?.path); if(action === 'new_folder') setModal({ type: 'create', itemType: 'folder', path }); if(action === 'new_file') setModal({ type: 'create', itemType: 'file', path }); if(action === 'settings') openApp('settings', 'Settings', 'settings'); setContextMenu(null); }} />}
       {fileToOpen && <FilePreviewModal file={fileToOpen} serverUrl={serverUrl} onClose={() => setFileToOpen(null)} />}
       {modal && <InputModal type={modal.type} data={modal.data} itemType={modal.itemType} onClose={() => setModal(null)} onConfirm={handleRename} onCreate={(val, type) => handleCreate(val, type, modal.path || '')} accent={accent} />}
-      <Dock openApp={openApp} accent={accent} />
+      <Dock openApp={openApp} accent={accent} activeWindows={windows} minimizeWindow={minimizeWindow} restoreWindow={restoreWindow} />
     </div>
   );
 }
