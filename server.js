@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs').promises;
-const fss = require('fs'); 
+const fss = require('fs');
 const path = require('path');
 const os = require('os');
-const si = require('systeminformation'); 
+const si = require('systeminformation');
 const { exec } = require('child_process');
-const mime = require('mime-types'); 
+const mime = require('mime-types');
 
 const app = express();
 const PRIMARY_PORT = 3001;
@@ -16,7 +16,7 @@ const FALLBACK_PORT = 3002;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const AUTH_FILE = path.join(__dirname, 'auth.json');
 const TRASH_DIR = path.join(os.homedir(), '.simplify_trash');
-const DIST_DIR = path.join(__dirname, 'dist'); 
+const DIST_DIR = path.join(__dirname, 'dist');
 
 // Ensure directories exist
 [PUBLIC_DIR, TRASH_DIR].forEach(dir => {
@@ -119,13 +119,35 @@ app.get('/api/system/stats', async (req, res) => {
       si.cpu(), si.mem(), si.osInfo(), si.currentLoad(), si.networkStats(), si.time(), si.cpuTemperature(),
       si.dockerInfo().catch(() => null), si.processes().catch(() => ({ list: [] })), si.fsSize()
     ]);
-    
+
     const topProc = processes.list.filter(p => p.name !== 'System Idle Process').sort((a,b) => b.cpu - a.cpu)[0];
-    
+
+    // MINIMAL FILTERING: Only remove known Docker file-mounts that break the UI.
+    // We allow all filesystem types (including squashfs/tmpfs) to ensure we don't hide your drives.
+    let cleanDrives = [];
+    const seenMounts = new Set();
+
+    if (fsSize && Array.isArray(fsSize)) {
+        cleanDrives = fsSize.filter(d => {
+            // These are strictly files, not drives
+            const isDockerConfig = d.mount.endsWith('/resolv.conf') ||
+                                   d.mount.endsWith('/hostname') ||
+                                   d.mount.endsWith('/hosts');
+
+            if (isDockerConfig) return false;
+
+            // Deduplicate exact mount points (fixes the double entry issue)
+            if (seenMounts.has(d.mount)) return false;
+            seenMounts.add(d.mount);
+
+            return true;
+        });
+    }
+
     let totalSize = 0;
     let usedSize = 0;
-    if (fsSize && fsSize.length > 0) {
-        const mainDrive = fsSize[0]; 
+    const mainDrive = cleanDrives.find(d => d.mount === '/') || cleanDrives[0];
+    if (mainDrive) {
         totalSize = mainDrive.size;
         usedSize = mainDrive.used;
     }
@@ -136,7 +158,7 @@ app.get('/api/system/stats', async (req, res) => {
       uptime: time.uptime,
       cpu: { manufacturer: cpu.manufacturer, brand: cpu.brand, speed: cpu.speed, cores: cpu.cores, temp: temp.main || 45, load: load.currentLoad },
       memory: { total: mem.total, used: mem.active, free: mem.available },
-      storage: { total: totalSize, used: usedSize },
+      storage: { total: totalSize, used: usedSize, drives: cleanDrives },
       network: net[0] ? { rx_sec: net[0].rx_sec, tx_sec: net[0].tx_sec } : { rx_sec: 0, tx_sec: 0 },
       docker: { running: docker ? !docker.error : false, containers: docker ? docker.containersRunning : 0 },
       topApp: topProc ? { name: topProc.name, cpu: topProc.cpu } : { name: 'System', cpu: 0 }
@@ -146,10 +168,10 @@ app.get('/api/system/stats', async (req, res) => {
 
 // --- 2. Files ---
 app.get('/api/files/list', async (req, res) => {
-  const dirPath = req.query.path || os.homedir(); 
+  const dirPath = req.query.path || os.homedir();
   try {
     const resolvedPath = path.resolve(req.query.trash === 'true' ? TRASH_DIR : dirPath);
-    
+
     const items = await fs.readdir(resolvedPath, { withFileTypes: true });
     const fileList = await Promise.all(items.map(async (item) => {
       const fullPath = path.join(resolvedPath, item.name);
@@ -163,7 +185,7 @@ app.get('/api/files/list', async (req, res) => {
         modified: stats.mtime
       };
     }));
-    
+
     fileList.sort((a, b) => {
         if (a.type === b.type) return new Date(b.modified) - new Date(a.modified);
         return a.type === 'folder' ? -1 : 1;
@@ -202,16 +224,16 @@ app.post('/api/files/upload', async (req, res) => {
 });
 
 app.post('/api/files/rename', async (req, res) => {
-    try { await fs.rename(req.body.oldPath, req.body.newPath); res.json({ success: true }); } 
+    try { await fs.rename(req.body.oldPath, req.body.newPath); res.json({ success: true }); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/files/delete', async (req, res) => {
     const { path: filePath } = req.body;
-    try { 
+    try {
         const fileName = path.basename(filePath);
         const trashPath = path.join(TRASH_DIR, fileName);
-        await fs.rename(filePath, trashPath); 
+        await fs.rename(filePath, trashPath);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -225,7 +247,7 @@ app.post('/api/files/empty-trash', async (req, res) => {
 });
 
 app.post('/api/files/write', async (req, res) => {
-    try { await fs.writeFile(req.body.path, req.body.content); res.json({ success: true }); } 
+    try { await fs.writeFile(req.body.path, req.body.content); res.json({ success: true }); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -279,8 +301,8 @@ app.post('/api/terminal/exec', (req, res) => {
 app.get('/api/apps/list', (req, res) => {
   // Parsing {{.Ports}} is key to finding the public port
   exec('docker ps -a --format "{{.Names}}|{{.Status}}|{{.Image}}|{{.ID}}|{{.Ports}}"', (error, stdout) => {
-    if (error) return res.json([]); 
-    
+    if (error) return res.json([]);
+
     const containers = stdout.trim().split('\n').filter(Boolean).map(line => {
       const parts = line.split('|');
       const name = parts[0];
@@ -293,13 +315,13 @@ app.get('/api/apps/list', (req, res) => {
       const portMatch = portsStr.match(/0\.0\.0\.0:(\d+)->/) || portsStr.match(/:::(\d+)->/) || portsStr.match(/:(\d+)->/);
       const publicPort = portMatch ? portMatch[1] : null;
 
-      return { 
-          name, 
-          status, 
-          image, 
-          id, 
+      return {
+          name,
+          status,
+          image,
+          id,
           publicPort,
-          isRunning: status.startsWith('Up') 
+          isRunning: status.startsWith('Up')
       };
     });
     res.json(containers);
@@ -390,5 +412,3 @@ app.get('*', (req, res) => {
         res.status(404).json({ error: "API Endpoint Not Found" });
     }
 });
-
-serverListener(PRIMARY_PORT);
