@@ -19,3 +19,7 @@ git clone https://github.com/jscr3ator/simplifyOS.git
 cd simplifyOS
 docker compose up --build -d
 ```
+
+### PS: This runs completly inside a docker container
+
+*Hope you like it xD*
