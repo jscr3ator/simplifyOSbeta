@@ -15,9 +15,7 @@ import {
   MessageSquare, Gamepad2, Radio, Tv, Layers, Usb
 } from 'lucide-react';
 
-// --- EXTENDED APP STORE LIST ---
 const PRESET_APPS = [
-  // --- Media ---
   {
     id: 'plex',
     name: 'Plex',
