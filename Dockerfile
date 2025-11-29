@@ -1,13 +1,12 @@
-version: "1.0"
+FROM node:20-alpine
 
-services:
-  simplifyos:
-    build: .
-    container_name: simplifyOS
-    restart: unless-stopped
-    ports:
-      - "3001:3001"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /media:/media
-      - /mnt:/mnt
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3001
+
+CMD ["npm", "start"]
